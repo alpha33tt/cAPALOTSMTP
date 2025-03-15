@@ -12,9 +12,9 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'paulmotil235@gmail.com')  # Use your verified email
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'pvsrvdvheqeeedid')  # Use your Gmail app password
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'paulmotil235@gmail.com')
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'cardonewhite081@gmail.com')  # Use your verified email
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'uyjcowqqgadqbozb')  # Use your Gmail app password
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'cardonewhite081@gmail.com')
 
 # Initialize Flask-Mail
 mail = Mail(app)
