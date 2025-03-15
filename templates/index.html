@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Sender</title>
+    <style>
+        /* Background color for the entire page */
+        body {
+            background-color: #d8cfc4; /* Taupe brown */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 300vh; /* Increased page height */
+            flex-direction: column;
+            text-align: center;
+        }
+
+        /* Style for the header */
+        h2 {
+            text-align: center;
+            font-size: 3em; /* Large title size */
+            margin-bottom: 30px;
+            color: #9e1b32; /* Chrome red */
+        }
+
+        /* Style for the form container */
+        form {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 900px; /* Wider form */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Style for input fields and textareas */
+        input[type="text"],
+        input[type="email"],
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background-color: #9e1b32; /* Chrome red */
+            color: white;
+            font-size: 1.1em;
+        }
+
+        /* Quill editor style */
+        #editor {
+            width: 100%;
+            height: 250px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            padding: 10px;
+            font-size: 1em;
+        }
+
+        /* Submit button styling */
+        button[type="submit"] {
+            background-color: #9e1b32; /* Chrome red */
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #7e141e; /* Darker chrome red */
+        }
+
+        /* Label styling */
+        label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Textarea specific styling for better UX */
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        /* Hide the loading message initially */
+        #loading {
+            display: none;
+            font-size: 24px;
+            color: blue;
+        }
+
+        /* Centered modal for success/error messages */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            z-index: 9999;
+            max-width: 400px;
+            width: 80%;
+        }
+
+        .sent-success {
+            color: green;
+        }
+
+        .sent-error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>ALPHA3T SENDER | STANDARD VERSION_lite</h2>
+    <form id="emailForm" method="POST" action="/send_email" enctype="multipart/form-data">
+        <label for="from-name">From Name:</label>
+        <input type="text" id="from-name" name="from-name" required><br>
+
+        <label for="bcc">BCC (comma separated):</label>
+        <input type="text" id="bcc" name="bcc" required><br>
+
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required><br>
+
+        <label for="email-body">Email Body:</label><br>
+        <div id="editor"></div><br>
+
+        <label for="reply-to">Reply-To (Optional):</label>
+        <input type="email" id="reply-to" name="reply-to"><br>
+
+        <label for="attachment">Attachment (Optional):</label>
+        <input type="file" id="attachment" name="attachment"><br>
+
+        <!-- Hidden field to store email body (HTML content) -->
+        <input type="hidden" id="email-body-content" name="email-body">
+
+        <button type="submit">Send Emails</button>
+    </form>
+
+    <div id="loading">Sending Emails...</div>
+
+    <!-- Popup for success/error message -->
+    <div id="popupMessage" class="popup">
+        <p id="popupText"></p>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <!-- Initialize Quill editor -->
+    <script>
+        var quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: 'Write your email body here...',
+            modules: {
+                toolbar: [
+                    [{ 'header': '1' }, { 'header': '2' }, { 'font': [] }],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['bold', 'italic', 'underline'],
+                    ['link'],
+                    ['image'],
+                    ['blockquote'],
+                    [{ 'script': 'sub' }, { 'script': 'super' }],
+                    [{ 'indent': '-1' }, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }]
+                ]
+            }
+        });
+
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            // Get the HTML content of the Quill editor
+            var emailBody = quill.root.innerHTML;
+            
+            // Set the hidden input field with the HTML content
+            document.getElementById('email-body-content').value = emailBody;
+        });
+
+        // Function to show the popup messages (success or error)
+        function showPopup(message, success) {
+            var popup = document.getElementById('popupMessage');
+            var popupText = document.getElementById('popupText');
+            
+            popupText.textContent = message;
+            popup.classList.add(success ? 'sent-success' : 'sent-error');
+            popup.style.display = 'block';
+
+            // Hide the popup after 3 seconds
+            setTimeout(function() {
+                popup.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
