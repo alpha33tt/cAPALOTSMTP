@@ -50,7 +50,7 @@ def send_email():
         for email in bcc_emails:
             msg = Message(
                 subject=subject,
-                recipients=[],
+                recipients=[],  # No recipients, since we're using BCC
                 bcc=[email],
                 body=plain_text_body,  # Plain text content
                 html=body,  # HTML content
@@ -58,10 +58,12 @@ def send_email():
                 reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
-            # Add proper headers
-            msg.headers['X-Mailer'] = 'Flask-Mail'  # To specify your app
-            msg.headers['List-Unsubscribe'] = '<mailto:unsubscribe@yourdomain.com>'  # Add unsubscribe link if necessary
-            msg.headers['Precedence'] = 'bulk'  # For bulk emails, helps reduce spam flags
+            # Set headers properly using the Message object attributes
+            msg.extra_headers = {
+                'X-Mailer': 'Flask-Mail',
+                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
+                'Precedence': 'bulk',
+            }
 
             # Handle file attachments (if any)
             if 'attachment' in request.files:
