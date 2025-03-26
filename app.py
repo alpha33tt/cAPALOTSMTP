@@ -44,13 +44,12 @@ def send_email():
             return 'Email body cannot be empty.', 400
 
         # Prepare the response
-        responses = []
         progress_updates = []  # This will store the progress of each email
 
         # Loop through the BCC emails and send them one by one
         for email in bcc_emails:
-            # Add "Sending" status for the current email
-            progress_updates.append(f"Sending email to {email}...")
+            # Send signal for "Sending" state
+            progress_updates.append({"status": "sending", "email": email})
 
             msg = Message(
                 subject=subject,
@@ -62,29 +61,16 @@ def send_email():
                 reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
-            # Set headers properly using the Message object attributes
-            msg.extra_headers = {
-                'X-Mailer': 'Flask-Mail',
-                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
-                'Precedence': 'bulk',
-            }
-
-            # Handle file attachments (if any)
-            if 'attachment' in request.files:
-                attachment = request.files['attachment']
-                if attachment:
-                    msg.attach(attachment.filename, attachment.content_type, attachment.read())
-
             # Send the email
             mail.send(msg)
 
-            # Wait a bit before sending the next email to simulate sequential sending
-            time.sleep(2)
+            # Wait a bit before sending the next email (2.5 seconds delay)
+            time.sleep(2.5)
 
-            # Add "Sent" status after the email is sent
-            progress_updates.append(f"Email to {email} sent successfully!")
+            # Send signal for "Sent" state
+            progress_updates.append({"status": "sent", "email": email})
 
-        return jsonify({"status": "success", "responses": progress_updates})
+        return jsonify({"status": "success", "updates": progress_updates})
 
     except Exception as e:
         app.logger.error(f"Error while sending email: {e}")
