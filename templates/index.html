@@ -68,6 +68,7 @@
         }
         .email-received {
             font-weight: bold;
+            color: #444;
         }
     </style>
 </head>
@@ -128,18 +129,19 @@ $(document).ready(function() {
                 // Loop through each email being sent
                 emailList.forEach(function(email, index) {
                     // Create a new item for the sending email number
-                    var emailItem = $('<div class="email-item"></div>').text('Sending email ' + emailCounter + '...');
+                    var emailItem = $('<div class="email-item sending"></div>').text('Sending email ' + emailCounter + '...');
                     $('#emailList').append(emailItem);
                     emailItem.fadeIn(500); // Fade in effect
 
                     setTimeout(function() {
                         emailItem.text('Email to ' + email.split(' ')[2] + ' sent successfully!')
+                            .removeClass('sending')
                             .addClass('sent') // Mark as sent
                             .fadeOut(500, function() {
                                 // Display the next email in the list after 2.5 seconds
                                 if (index + 1 < emailList.length) {
                                     emailCounter++;
-                                    var nextItem = $('<div class="email-item"></div>');
+                                    var nextItem = $('<div class="email-item sending"></div>');
                                     $('#emailList').append(nextItem);
                                     nextItem.fadeIn(500).text('Sending email ' + (index + 2) + '...');
                                 }
