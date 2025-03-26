@@ -58,9 +58,10 @@ def send_email():
                 reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
-            # Set headers properly using the Message object attributes
+            # Set headers properly using the Message object attributes to simulate forwarding
             msg.extra_headers = {
                 'X-Mailer': 'Flask-Mail',
+                'X-Forwarded-For': from_email,  # Simulate forwarded email sender
                 'Precedence': 'bulk',
                 'X-Priority': '3',  # Low priority (helps to avoid spam)
                 'X-Sender': from_email,
