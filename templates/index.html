@@ -25,6 +25,11 @@
             padding: 10px;
             margin-top: 10px;
         }
+        .sending-number {
+            color: blue;
+            font-size: 18px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +81,8 @@
             progressElement.innerHTML = '';  // Clear previous progress
             loadingElement.style.display = 'block';  // Show the loading spinner
 
+            let emailCounter = 1;  // Email counter to track sending sequence
+
             // Send the email via the backend
             fetch('/send_email', {
                 method: 'POST',
@@ -86,18 +93,26 @@
                 loadingElement.style.display = 'none';  // Hide loading spinner
                 if (data.status === 'success') {
                     // Loop through email updates and display status
+                    let allSent = true;
+
                     data.updates.forEach(update => {
                         const p = document.createElement('p');
                         p.className = 'notification';
+
                         if (update.status === 'sending') {
-                            p.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending email to ${update.email}...`;
+                            p.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending email to ${update.email} <span class="sending-number">${emailCounter}</span>`;
                             p.classList.add('sending');
                         } else if (update.status === 'sent') {
                             p.innerHTML = `<i class="fas fa-check-circle"></i> Email to ${update.email} sent successfully!`;
                             p.classList.add('sent');
                         }
+
                         progressElement.appendChild(p);
+                        emailCounter++;
                     });
+
+                    // Scroll to the bottom after all emails have been sent
+                    window.scrollTo(0, document.body.scrollHeight);
                 } else {
                     const p = document.createElement('p');
                     p.className = 'error';
