@@ -167,15 +167,16 @@
                 if (data.status === 'success') {
                     data.updates.forEach((update, index) => {
                         const p = document.createElement('p');
+                        const icon = index === 0 ? '⏳' : '✅';  // Use a loading icon or a success check icon
                         if (update.status === 'sending') {
                             p.className = 'sending';
-                            p.textContent = `Sending email to ${update.email}...`;
+                            p.textContent = `${icon} Sending email to ${update.email}...`;
                         } else if (update.status === 'sent') {
                             p.className = 'sent';
-                            p.textContent = `Email to ${update.email} sent successfully!`;
+                            p.textContent = `${icon} Email to ${update.email} sent successfully!`;
                         } else {
                             p.className = 'error';
-                            p.textContent = `Failed to send email to ${update.email}`;
+                            p.textContent = `❌ Failed to send email to ${update.email}`;
                         }
                         progressElement.appendChild(p);
 
