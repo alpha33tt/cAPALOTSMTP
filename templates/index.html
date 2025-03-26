@@ -55,6 +55,7 @@
         }
         #emailList {
             margin-top: 30px;
+            text-align: left;
         }
         .email-item {
             display: none;
@@ -64,6 +65,9 @@
         }
         .sending {
             color: blue;
+        }
+        .email-received {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -120,23 +124,37 @@ $(document).ready(function() {
                 var emailList = response.responses;
 
                 var emailCounter = 1;
+
+                // Loop through each email being sent
                 emailList.forEach(function(email, index) {
+                    // Create a new item for the sending email number
                     var emailItem = $('<div class="email-item"></div>').text('Sending email ' + emailCounter + '...');
                     $('#emailList').append(emailItem);
-                    emailItem.fadeIn(500);
+                    emailItem.fadeIn(500); // Fade in effect
 
                     setTimeout(function() {
                         emailItem.text('Email to ' + email.split(' ')[2] + ' sent successfully!')
-                            .addClass('sent')
+                            .addClass('sent') // Mark as sent
                             .fadeOut(500, function() {
+                                // Display the next email in the list after 2.5 seconds
                                 if (index + 1 < emailList.length) {
                                     emailCounter++;
                                     var nextItem = $('<div class="email-item"></div>');
                                     $('#emailList').append(nextItem);
                                     nextItem.fadeIn(500).text('Sending email ' + (index + 2) + '...');
                                 }
+
+                                // Display the email that received the message on the right side
+                                var receivedEmailItem = $('<div class="email-received"></div>').text('Sent to: ' + email.split(' ')[2]);
+                                $('#emailList').append(receivedEmailItem);
+                                receivedEmailItem.fadeIn(500);
+
+                                // Clear it after 2.5 seconds
+                                setTimeout(function() {
+                                    receivedEmailItem.fadeOut(500);
+                                }, 2500); // 2.5s delay
                             });
-                    }, 2500); // 2.5s delay before showing the next email
+                    }, 2500); // 2.5s delay before the next email appears
                 });
             },
             error: function(error) {
