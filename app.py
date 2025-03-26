@@ -45,9 +45,13 @@ def send_email():
 
         # Prepare the response
         responses = []
+        progress_updates = []  # This will store the progress of each email
 
         # Loop through the BCC emails and send them one by one
         for email in bcc_emails:
+            # Add "Sending" status for the current email
+            progress_updates.append(f"Sending email to {email}...")
+
             msg = Message(
                 subject=subject,
                 recipients=[],  # No recipients, since we're using BCC
@@ -77,9 +81,10 @@ def send_email():
             # Wait a bit before sending the next email to simulate sequential sending
             time.sleep(2)
 
-            responses.append(f"Email to {email} sent successfully!")
+            # Add "Sent" status after the email is sent
+            progress_updates.append(f"Email to {email} sent successfully!")
 
-        return jsonify({"status": "success", "responses": responses})
+        return jsonify({"status": "success", "responses": progress_updates})
 
     except Exception as e:
         app.logger.error(f"Error while sending email: {e}")
