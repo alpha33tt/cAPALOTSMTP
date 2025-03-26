@@ -1,18 +1,20 @@
+import os
 from flask import Flask, render_template, request, jsonify
 from flask_mail import Mail, Message
+import re
 import time
 
 app = Flask(__name__)
 
-# Configure email settings
+# Configure email settings for Gmail SMTP
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
-app.config['MAIL_USERNAME'] = 'paulmotil235@gmail.com'  # Replace with your email
-app.config['MAIL_PASSWORD'] = 'aoarlmobvjtablgm'  # Replace with your app-specific password
-app.config['MAIL_DEFAULT_SENDER'] = 'paulmotil235@gmail.com'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Your Gmail email address
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm')  # Gmail app password
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'hewlettpackardenterprise01@gmail.com')
 
 # Initialize Flask-Mail
 mail = Mail(app)
@@ -29,11 +31,12 @@ def strip_html_tags(html):
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        from_name = request.form['from-name']
+        from_name = "PAUL MOTIL"  # Set the sender name to PAUL MOTIL
+        from_email = "paulmotil235@gmail.com"  # The email address to be used in the "Reply-To"
         recipients = request.form['recipients'].split(',')  # Split comma-separated emails
         subject = request.form['subject']
         body = request.form['email-body']
-        reply_to = request.form.get('reply-to')
+        reply_to = request.form.get('reply-to', from_email)  # Use the 'reply-to' provided or fall back to default
 
         # Get the plain text version of the email body
         plain_text_body = strip_html_tags(body)
@@ -51,7 +54,7 @@ def send_email():
                 recipients=[email],  # Send email individually to each recipient
                 body=plain_text_body,  # Plain text content
                 html=body,  # HTML content
-                sender=f"{from_name} <{app.config['MAIL_DEFAULT_SENDER']}>",  # From name
+                sender=f"{from_name} <{from_email}>",  # From name and email address
                 reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
@@ -60,6 +63,9 @@ def send_email():
                 'X-Mailer': 'Flask-Mail',
                 'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
                 'Precedence': 'bulk',
+                'X-Priority': '3',  # Low priority (helps to avoid spam)
+                'X-Sender': from_email,
+                'X-Content-Type-Options': 'nosniff',  # Helps in some email clients
             }
 
             # Handle file attachments (if any)
@@ -71,10 +77,9 @@ def send_email():
             # Forward the email (send it individually)
             mail.send(msg)
 
-            # Wait 2.5 seconds before sending the next email to avoid being flagged as spam
+            # Wait a bit before sending the next email to simulate sequential sending
             time.sleep(2.5)
 
-            # Add a response for each sent email
             responses.append(f"Email to {email} sent successfully!")
 
         return jsonify({"status": "success", "responses": responses})
