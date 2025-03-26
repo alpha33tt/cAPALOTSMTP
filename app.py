@@ -10,9 +10,9 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'cardonewhite081@gmail.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'uyjcowqqgadqbozb')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'cardonewhite081@gmail.com')
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'your-email@gmail.com')  # Replace with your email
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'your-app-password')  # Replace with your app password
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'your-email@gmail.com')
 
 mail = Mail(app)
 
@@ -23,37 +23,52 @@ def index():
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        from_name = request.form['from-name']
-        bcc_emails = request.form['bcc'].split(',')
-        subject = request.form['subject']
-        body = request.form['email-body']
-        reply_to = request.form.get('reply-to')
+        # Check if the required fields are available
+        from_name = request.form.get('from-name')
+        bcc_emails = request.form.get('bcc', '').split(',')
+        subject = request.form.get('subject')
+        body = request.form.get('email-body')
+        reply_to = request.form.get('reply-to', '')
+
+        # Log incoming data to debug if needed
+        print(f"Received from-name: {from_name}")
+        print(f"Received bcc emails: {bcc_emails}")
+        print(f"Received subject: {subject}")
+        print(f"Received email body: {body}")
+        
+        # Validate that required fields are present
+        if not from_name or not bcc_emails or not subject or not body:
+            return jsonify({"status": "error", "message": "Missing required fields."}), 400
 
         responses = []
         updates = []
 
+        # Loop through BCC emails to send one by one
         for email in bcc_emails:
-            # Send Email
+            if not email.strip():  # Skip empty emails
+                continue
+
+            # Send email
             msg = Message(
                 subject=subject,
-                recipients=[],
+                recipients=[],  # No recipients since we are using BCC
                 bcc=[email],
                 body=body,
                 sender=f"{from_name} <{app.config['MAIL_DEFAULT_SENDER']}>",
                 reply_to=reply_to,
             )
-            
-            # Mark email as "sending"
+
+            # Update status: email is being sent
             updates.append({"email": email, "status": "sending"})
-            time.sleep(2.5)  # Simulate delay
+            time.sleep(2.5)  # Wait for 2.5 seconds to simulate delay between sends
 
             # Send the email
             mail.send(msg)
-            
-            # Mark email as "sent"
+
+            # Update status: email sent successfully
             updates.append({"email": email, "status": "sent"})
             responses.append(f"Email to {email} sent successfully!")
-        
+
         return jsonify({"status": "success", "updates": updates})
 
     except Exception as e:
