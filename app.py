@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_mail import Mail, Message
 import re
 import time
-import dkim  # New import for DKIM signing
+import dkim
 import random
 from email.utils import formatdate
 import socket
@@ -19,7 +19,7 @@ app.config.update(
     MAIL_USERNAME=os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com'),
     MAIL_PASSWORD=os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm'),
     MAIL_DEFAULT_SENDER=('PAUL MOTIL', os.getenv('MAIL_DEFAULT_SENDER', 'paulmotil235@gmail.com')),
-    MAIL_MAX_EMAILS=50,  # Limit emails per connection
+    MAIL_MAX_EMAILS=50,
     MAIL_SUPPRESS_SEND=False,
     MAIL_ASCII_ATTACHMENTS=False
 )
@@ -31,7 +31,7 @@ mail = Mail(app)
 DOMAIN = "yourdomain.com"  # Replace with your actual domain
 DKIM_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
 YourPrivateKeyHere
------END RSA PRIVATE KEY-----"""  # Add your DKIM private key
+-----END RSA PRIVATE KEY-----"""
 
 def get_ip_address():
     """Get server IP address for reverse DNS matching"""
@@ -66,7 +66,7 @@ def add_dkim_signature(msg):
 def warmup_sending_pattern(total_emails):
     """Implement gradual warmup for new IP/domain"""
     if total_emails < 100:
-        return random.uniform(5, 10)  # Start slow
+        return random.uniform(5, 10)
     elif total_emails < 500:
         return random.uniform(2, 5)
     else:
@@ -96,7 +96,6 @@ def send_email():
 
         for email in recipients:
             try:
-                # Create message with enhanced headers
                 msg = Message(
                     subject=subject,
                     recipients=[email],
@@ -106,7 +105,6 @@ def send_email():
                     reply_to=reply_to,
                     date=formatdate(localtime=True)
                 
-                # Enhanced headers for deliverability
                 msg.extra_headers = {
                     'X-Mailer': 'CustomMailer/1.0',
                     'X-Originating-IP': get_ip_address(),
@@ -117,13 +115,11 @@ def send_email():
                     'X-Entity-Ref-ID': str(random.randint(100000, 999999)),
                     'List-Unsubscribe': f'<mailto:unsubscribe@{DOMAIN}?subject=Unsubscribe>',
                     'Feedback-ID': f"{from_name}:{DOMAIN}",
-                    'X-Campaign-ID': str(random.randint(1000, 9999)),
+                    'X-Campaign-ID': str(random.randint(1000, 9999))
                 }
 
-                # Add DKIM signature
                 msg = add_dkim_signature(msg)
 
-                # Handle attachments
                 if 'attachment' in request.files:
                     attachment = request.files['attachment']
                     if attachment and attachment.filename:
@@ -132,15 +128,13 @@ def send_email():
                             attachment.content_type,
                             attachment.read(),
                             'attachment',
-                            '7bit'  # Use 'base64' for binary files
+                            '7bit'
                         )
 
-                # Send email
                 mail.send(msg)
                 total_sent += 1
                 responses.append(f"Email to {email} sent successfully!")
 
-                # Implement smart throttling
                 delay = warmup_sending_pattern(total_sent)
                 time.sleep(delay)
 
