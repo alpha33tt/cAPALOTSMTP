@@ -31,7 +31,7 @@ def strip_html_tags(html):
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        from_name = "PAUL MOTIL"  # Set the sender name to PAUL MOTIL
+        from_name = "Officials | Info"  # Set the sender name to PAUL MOTIL
         from_email = "paulmotil235@gmail.com"  # The email address to be used in the "Reply-To"
         bcc_emails = request.form['bcc'].split(',')
         subject = request.form['subject']
