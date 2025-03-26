@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Sender</title>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Quill Editor CDN -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -96,14 +98,21 @@
             box-sizing: border-box;
         }
 
-        textarea {
-            resize: vertical;
-        }
-
         input[type="text"]:focus, textarea:focus {
             border-color: #4CAF50;
         }
 
+        /* Quill Editor */
+        .ql-container {
+            height: 300px;
+            margin-top: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .ql-editor {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +130,7 @@
         <input type="text" id="subject" name="subject" required><br><br>
 
         <label for="email-body">Body:</label><br>
-        <textarea id="email-body" name="email-body" rows="6" required></textarea><br><br>
+        <div id="editor" style="height: 300px;"></div><br><br>
 
         <button type="submit" class="btn">Send Emails</button>
     </form>
@@ -140,12 +149,37 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Initialize Quill editor
+    var quill = new Quill('#editor', {
+        theme: 'snow',
+        modules: {
+            keyboard: {
+                bindings: {
+                    'ctrl+k': {
+                        key: 'K',
+                        shortKey: true,
+                        handler: function(range, context) {
+                            // Hide images when Ctrl + K is pressed
+                            var images = document.querySelectorAll('.ql-editor img');
+                            images.forEach(function(img) {
+                                img.style.display = 'none';
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    });
+
     $('#emailForm').submit(function(event) {
         event.preventDefault();
 
         var formData = new FormData(this);
+        // Append Quill editor content to the form data
+        formData.append('email-body', quill.root.innerHTML);
         $('#loading').show();
 
         $.ajax({
