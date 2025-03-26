@@ -3,21 +3,43 @@ from flask import Flask, render_template, request, jsonify
 from flask_mail import Mail, Message
 import re
 import time
+import dkim  # New import for DKIM signing
+import random
+from email.utils import formatdate
+import socket
 
 app = Flask(__name__)
 
-# Configure email settings for Gmail SMTP
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Your Gmail email address
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm')  # Gmail app password
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'hewlettpackardenterprise01@gmail.com')
+# Enhanced email configuration
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USE_SSL=False,
+    MAIL_USERNAME=os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com'),
+    MAIL_PASSWORD=os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm'),
+    MAIL_DEFAULT_SENDER=('PAUL MOTIL', os.getenv('MAIL_DEFAULT_SENDER', 'paulmotil235@gmail.com')),
+    MAIL_MAX_EMAILS=50,  # Limit emails per connection
+    MAIL_SUPPRESS_SEND=False,
+    MAIL_ASCII_ATTACHMENTS=False
+)
 
 # Initialize Flask-Mail
 mail = Mail(app)
+
+# Domain verification and authentication setup
+DOMAIN = "yourdomain.com"  # Replace with your actual domain
+DKIM_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
+YourPrivateKeyHere
+-----END RSA PRIVATE KEY-----"""  # Add your DKIM private key
+
+def get_ip_address():
+    """Get server IP address for reverse DNS matching"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
 
 @app.route('/')
 def index():
@@ -28,65 +50,115 @@ def strip_html_tags(html):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html)
 
+def add_dkim_signature(msg):
+    """Add DKIM signature to email headers"""
+    headers = ['From', 'To', 'Subject', 'Date']
+    sig = dkim.sign(
+        message=msg.as_bytes(),
+        selector='default',
+        domain=DOMAIN,
+        privkey=DKIM_PRIVATE_KEY.encode(),
+        include_headers=headers
+    )
+    msg['DKIM-Signature'] = sig.decode().split(':', 1)[1].strip()
+    return msg
+
+def warmup_sending_pattern(total_emails):
+    """Implement gradual warmup for new IP/domain"""
+    if total_emails < 100:
+        return random.uniform(5, 10)  # Start slow
+    elif total_emails < 500:
+        return random.uniform(2, 5)
+    else:
+        return random.uniform(1, 3)
+
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        from_name = "PAUL MOTIL"  # Set the sender name to PAUL MOTIL
-        from_email = "paulmotil235@gmail.com"  # The email address to be used in the "Reply-To"
-        recipients = request.form['bcc'].split(',')  # Split recipients from input
-        subject = request.form['subject']
-        body = request.form['email-body']
-        reply_to = request.form.get('reply-to', from_email)  # Use the 'reply-to' provided or fall back to default
+        from_name = "PAUL MOTIL"
+        from_email = "paulmotil235@gmail.com"
+        recipients = [email.strip() for email in request.form['bcc'].split(',') if email.strip()]
+        subject = request.form['subject'].strip()
+        body = request.form['email-body'].strip()
+        reply_to = request.form.get('reply-to', from_email).strip()
 
-        # Get the plain text version of the email body
+        # Validate inputs
+        if not recipients:
+            return jsonify({"status": "error", "message": "No valid recipients provided"}), 400
+        if not subject:
+            return jsonify({"status": "error", "message": "Subject cannot be empty"}), 400
+        if not body:
+            return jsonify({"status": "error", "message": "Email body cannot be empty"}), 400
+
         plain_text_body = strip_html_tags(body)
-
-        if not plain_text_body.strip():
-            return 'Email body cannot be empty.', 400
-
-        # Prepare the response
         responses = []
+        total_sent = 0
 
-        # Loop through each recipient and send the email
         for email in recipients:
-            msg = Message(
-                subject=subject,
-                recipients=[email],  # Directly send to the recipient
-                body=plain_text_body,  # Plain text content
-                html=body,  # HTML content
-                sender=f"{from_name} <{from_email}>",  # From name and email address
-                reply_to=reply_to,  # Set the 'Reply-to' email
-            )
+            try:
+                # Create message with enhanced headers
+                msg = Message(
+                    subject=subject,
+                    recipients=[email],
+                    body=plain_text_body,
+                    html=body,
+                    sender=f"{from_name} <{from_email}>",
+                    reply_to=reply_to,
+                    date=formatdate(localtime=True)
+                
+                # Enhanced headers for deliverability
+                msg.extra_headers = {
+                    'X-Mailer': 'CustomMailer/1.0',
+                    'X-Originating-IP': get_ip_address(),
+                    'Precedence': 'bulk',
+                    'X-Priority': '3 (Normal)',
+                    'X-MSMail-Priority': 'Normal',
+                    'X-Content-Type-Options': 'nosniff',
+                    'X-Entity-Ref-ID': str(random.randint(100000, 999999)),
+                    'List-Unsubscribe': f'<mailto:unsubscribe@{DOMAIN}?subject=Unsubscribe>',
+                    'Feedback-ID': f"{from_name}:{DOMAIN}",
+                    'X-Campaign-ID': str(random.randint(1000, 9999)),
+                }
 
-            # Set headers properly using the Message object attributes to simulate forwarding
-            msg.extra_headers = {
-                'X-Mailer': 'Flask-Mail',
-                'X-Forwarded-For': from_email,  # Simulate forwarded email sender
-                'Precedence': 'bulk',
-                'X-Priority': '3',  # Low priority (helps to avoid spam)
-                'X-Sender': from_email,
-                'X-Content-Type-Options': 'nosniff',  # Helps in some email clients
-            }
+                # Add DKIM signature
+                msg = add_dkim_signature(msg)
 
-            # Handle file attachments (if any)
-            if 'attachment' in request.files:
-                attachment = request.files['attachment']
-                if attachment:
-                    msg.attach(attachment.filename, attachment.content_type, attachment.read())
+                # Handle attachments
+                if 'attachment' in request.files:
+                    attachment = request.files['attachment']
+                    if attachment and attachment.filename:
+                        msg.attach(
+                            attachment.filename,
+                            attachment.content_type,
+                            attachment.read(),
+                            'attachment',
+                            '7bit'  # Use 'base64' for binary files
+                        )
 
-            # Send the email
-            mail.send(msg)
+                # Send email
+                mail.send(msg)
+                total_sent += 1
+                responses.append(f"Email to {email} sent successfully!")
 
-            # Wait a bit before sending the next email to simulate sequential sending
-            time.sleep(2.5)
+                # Implement smart throttling
+                delay = warmup_sending_pattern(total_sent)
+                time.sleep(delay)
 
-            responses.append(f"Email to {email} sent successfully!")
+            except Exception as e:
+                app.logger.error(f"Error sending to {email}: {str(e)}")
+                responses.append(f"Failed to send to {email}: {str(e)}")
+                continue
 
-        return jsonify({"status": "success", "responses": responses})
+        return jsonify({
+            "status": "success",
+            "responses": responses,
+            "sent_count": total_sent,
+            "failed_count": len(recipients) - total_sent
+        })
 
     except Exception as e:
-        app.logger.error(f"Error while sending email: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        app.logger.error(f"System error: {str(e)}", exc_info=True)
+        return jsonify({"status": "error", "message": f"System error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=10000)
