@@ -55,7 +55,6 @@
         }
         #emailList {
             margin-top: 30px;
-            text-align: left;
         }
         .email-item {
             display: none;
@@ -69,6 +68,7 @@
         .email-received {
             font-weight: bold;
             color: #444;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -110,7 +110,7 @@
 $(document).ready(function() {
     $('#emailForm').submit(function(event) {
         event.preventDefault();
-        
+
         var formData = new FormData(this);
         $('#loading').show();
 
