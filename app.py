@@ -10,9 +10,9 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Replace with your email
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm')  # Replace with your app password
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'hewlettpackardenterprise01@gmail.com')
+app.config['MAIL_USERNAME'] = 'hewlettpackardenterprise01@gmail.com'  # Your email
+app.config['MAIL_PASSWORD'] = 'aoarlmobvjtablgm'  # Your app password
+app.config['MAIL_DEFAULT_SENDER'] = 'hewlettpackardenterprise01@gmail.com'
 
 mail = Mail(app)
 
@@ -30,12 +30,6 @@ def send_email():
         body = request.form.get('email-body')
         reply_to = request.form.get('reply-to', '')
 
-        # Log incoming data to debug if needed
-        print(f"Received from-name: {from_name}")
-        print(f"Received bcc emails: {bcc_emails}")
-        print(f"Received subject: {subject}")
-        print(f"Received email body: {body}")
-        
         # Validate that required fields are present
         if not from_name or not bcc_emails or not subject or not body:
             return jsonify({"status": "error", "message": "Missing required fields."}), 400
