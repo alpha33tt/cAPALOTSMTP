@@ -1,8 +1,8 @@
 import os
-from flask import Flask, render_template, request, jsonify
-from flask_mail import Mail, Message
 import re
 import time
+from flask import Flask, render_template, request, jsonify
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 
@@ -21,7 +21,7 @@ mail = Mail(app)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html')  # Ensure this file exists in your templates folder
 
 def strip_html_tags(html):
     """Remove HTML tags and return plain text."""
