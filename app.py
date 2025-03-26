@@ -6,12 +6,13 @@ import time
 
 app = Flask(__name__)
 
-# Configure email settings
+# Configure email settings for Gmail SMTP
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Gmail username
+
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Your Gmail email address
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm')  # Gmail app password
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'hewlettpackardenterprise01@gmail.com')
 
@@ -44,7 +45,6 @@ def send_email():
 
         # Prepare the response
         responses = []
-        email_counter = 1
 
         # Loop through the BCC emails and send them one by one
         for email in bcc_emails:
@@ -61,9 +61,12 @@ def send_email():
             # Set headers properly using the Message object attributes
             msg.extra_headers = {
                 'X-Mailer': 'Flask-Mail',
-                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',  # Include unsubscribe link
-                'Precedence': 'bulk',  # Mark email as bulk
-                'List-Id': 'example-list@yourdomain.com',  # Use a unique list ID
+                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
+                'Precedence': 'bulk',
+                'X-Priority': '3',  # Low priority (helps to avoid spam)
+                'X-Sender': app.config['MAIL_USERNAME'],
+                'X-Content-Type-Options': 'nosniff',  # Helps in some email clients
+                'DKIM-Signature': 'v=1; a=rsa-sha256; c=relaxed/relaxed; d=yourdomain.com; s=selector1;',
             }
 
             # Handle file attachments (if any)
@@ -75,11 +78,10 @@ def send_email():
             # Send the email
             mail.send(msg)
 
-            # Wait for 2.5 seconds before sending the next email
+            # Wait a bit before sending the next email to simulate sequential sending
             time.sleep(2.5)
 
             responses.append(f"Email to {email} sent successfully!")
-            email_counter += 1
 
         return jsonify({"status": "success", "responses": responses})
 
