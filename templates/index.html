@@ -165,16 +165,24 @@
             .then(data => {
                 loadingElement.style.display = 'none';  // Hide loading spinner
                 if (data.status === 'success') {
-                    data.updates.forEach(update => {
+                    data.updates.forEach((update, index) => {
                         const p = document.createElement('p');
                         if (update.status === 'sending') {
                             p.className = 'sending';
-                            p.textContent = 'Sending email to ' + update.email + '...';
+                            p.textContent = `Sending email to ${update.email}...`;
                         } else if (update.status === 'sent') {
                             p.className = 'sent';
-                            p.textContent = 'Email to ' + update.email + ' sent successfully!';
+                            p.textContent = `Email to ${update.email} sent successfully!`;
+                        } else {
+                            p.className = 'error';
+                            p.textContent = `Failed to send email to ${update.email}`;
                         }
                         progressElement.appendChild(p);
+
+                        // Delay the next email send by 2.5 seconds
+                        if (index < data.updates.length - 1) {
+                            setTimeout(() => {}, 2500);
+                        }
                     });
                 } else {
                     const p = document.createElement('p');
