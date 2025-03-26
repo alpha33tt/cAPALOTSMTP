@@ -4,131 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Sender</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <style>
-        .sending { color: orange; font-weight: bold; }
-        .sent { color: green; font-weight: bold; }
-        .error { color: red; font-weight: bold; }
-        #loading { 
-            display: none; 
-            position: fixed; 
-            top: 10px; 
-            right: 10px; 
-            z-index: 9999;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
         }
-        #progress {
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             margin-top: 20px;
         }
-        .notification {
-            font-size: 16px;
-            padding: 10px;
-            margin-top: 10px;
+        .btn:hover {
+            background-color: #45a049;
         }
-        .sending-number {
-            color: blue;
+        #status {
+            margin-top: 20px;
             font-size: 18px;
-            font-weight: bold;
+            color: #333;
+        }
+        #loading {
+            display: none;
+            color: #ff9900;
+            font-size: 20px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+        #emailList {
+            margin-top: 30px;
+        }
+        .email-item {
+            display: none;
+        }
+        .sent {
+            color: green;
+        }
+        .sending {
+            color: blue;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Send Email</h1>
-        <form id="email-form" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="from-name" class="form-label">Sender Name</label>
-                <input type="text" class="form-control" id="from-name" name="from-name" required>
-            </div>
-            <div class="mb-3">
-                <label for="bcc" class="form-label">BCC Emails (comma separated)</label>
-                <input type="text" class="form-control" id="bcc" name="bcc" required>
-            </div>
-            <div class="mb-3">
-                <label for="subject" class="form-label">Subject</label>
-                <input type="text" class="form-control" id="subject" name="subject" required>
-            </div>
-            <div class="mb-3">
-                <label for="email-body" class="form-label">Email Body</label>
-                <textarea class="form-control" id="email-body" name="email-body" rows="5" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="reply-to" class="form-label">Reply-To Email (Optional)</label>
-                <input type="email" class="form-control" id="reply-to" name="reply-to">
-            </div>
-            <div class="mb-3">
-                <label for="attachment" class="form-label">Attach File (Optional)</label>
-                <input type="file" class="form-control" id="attachment" name="attachment">
-            </div>
-            <button type="submit" class="btn btn-primary">Send Emails</button>
-        </form>
 
-        <div id="loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            <span>Sending...</span>
-        </div>
+<div class="container">
+    <h1>Email Sender</h1>
+    <form id="emailForm">
+        <label for="from-name">Sender Name:</label><br>
+        <input type="text" id="from-name" name="from-name" required><br><br>
 
-        <div id="progress"></div>
+        <label for="bcc">Recipients (comma separated):</label><br>
+        <input type="text" id="bcc" name="bcc" required><br><br>
+
+        <label for="subject">Subject:</label><br>
+        <input type="text" id="subject" name="subject" required><br><br>
+
+        <label for="email-body">Body:</label><br>
+        <textarea id="email-body" name="email-body" rows="6" required></textarea><br><br>
+
+        <button type="submit" class="btn">Send Emails</button>
+    </form>
+
+    <div id="status">
+        <p>Sending...</p>
     </div>
 
-    <script>
-        document.getElementById('email-form').addEventListener('submit', function (e) {
-            e.preventDefault();
+    <div id="loading">
+        <i class="fa fa-spinner fa-spin"></i> Sending...
+    </div>
 
-            const formData = new FormData(this);
-            const progressElement = document.getElementById('progress');
-            const loadingElement = document.getElementById('loading');
-            progressElement.innerHTML = '';  // Clear previous progress
-            loadingElement.style.display = 'block';  // Show the loading spinner
+    <div id="emailList">
+        <!-- Sent emails will appear here -->
+    </div>
+</div>
 
-            let emailCounter = 1;  // Email counter to track sending sequence
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#emailForm').submit(function(event) {
+        event.preventDefault();
+        
+        var formData = new FormData(this);
+        $('#loading').show();
 
-            // Send the email via the backend
-            fetch('/send_email', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingElement.style.display = 'none';  // Hide loading spinner
-                if (data.status === 'success') {
-                    // Loop through email updates and display status
-                    let allSent = true;
+        $.ajax({
+            url: '/send_email',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                $('#loading').hide();
+                var emailList = response.responses;
 
-                    data.updates.forEach(update => {
-                        const p = document.createElement('p');
-                        p.className = 'notification';
+                var emailCounter = 1;
+                emailList.forEach(function(email, index) {
+                    var emailItem = $('<div class="email-item"></div>').text('Sending email ' + emailCounter + '...');
+                    $('#emailList').append(emailItem);
+                    emailItem.fadeIn(500);
 
-                        if (update.status === 'sending') {
-                            p.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending email to ${update.email} <span class="sending-number">${emailCounter}</span>`;
-                            p.classList.add('sending');
-                        } else if (update.status === 'sent') {
-                            p.innerHTML = `<i class="fas fa-check-circle"></i> Email to ${update.email} sent successfully!`;
-                            p.classList.add('sent');
-                        }
-
-                        progressElement.appendChild(p);
-                        emailCounter++;
-                    });
-
-                    // Scroll to the bottom after all emails have been sent
-                    window.scrollTo(0, document.body.scrollHeight);
-                } else {
-                    const p = document.createElement('p');
-                    p.className = 'error';
-                    p.textContent = `An error occurred: ${data.message}`;
-                    progressElement.appendChild(p);
-                }
-            })
-            .catch(error => {
-                loadingElement.style.display = 'none';
-                const p = document.createElement('p');
-                p.className = 'error';
-                p.textContent = 'Failed to send emails: ' + error.message;
-                progressElement.appendChild(p);
-            });
+                    setTimeout(function() {
+                        emailItem.text('Email to ' + email.split(' ')[2] + ' sent successfully!')
+                            .addClass('sent')
+                            .fadeOut(500, function() {
+                                if (index + 1 < emailList.length) {
+                                    emailCounter++;
+                                    var nextItem = $('<div class="email-item"></div>');
+                                    $('#emailList').append(nextItem);
+                                    nextItem.fadeIn(500).text('Sending email ' + (index + 2) + '...');
+                                }
+                            });
+                    }, 2500); // 2.5s delay before showing the next email
+                });
+            },
+            error: function(error) {
+                console.log(error);
+                $('#loading').hide();
+                $('#status').text('An error occurred.');
+            }
         });
-    </script>
+    });
+});
+</script>
 
 </body>
 </html>
