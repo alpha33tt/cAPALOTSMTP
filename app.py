@@ -33,7 +33,7 @@ def send_email():
     try:
         from_name = "PAUL MOTIL"  # Set the sender name to PAUL MOTIL
         from_email = "paulmotil235@gmail.com"  # The email address to be used in the "Reply-To"
-        recipients = request.form['recipients'].split(',')  # Split comma-separated emails
+        recipients = request.form['bcc'].split(',')  # Split recipients from input
         subject = request.form['subject']
         body = request.form['email-body']
         reply_to = request.form.get('reply-to', from_email)  # Use the 'reply-to' provided or fall back to default
@@ -47,11 +47,11 @@ def send_email():
         # Prepare the response
         responses = []
 
-        # Loop through the recipients and send them one by one
+        # Loop through each recipient and send the email
         for email in recipients:
             msg = Message(
                 subject=subject,
-                recipients=[email],  # Send email individually to each recipient
+                recipients=[email],  # Directly send to the recipient
                 body=plain_text_body,  # Plain text content
                 html=body,  # HTML content
                 sender=f"{from_name} <{from_email}>",  # From name and email address
@@ -61,7 +61,6 @@ def send_email():
             # Set headers properly using the Message object attributes
             msg.extra_headers = {
                 'X-Mailer': 'Flask-Mail',
-                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
                 'Precedence': 'bulk',
                 'X-Priority': '3',  # Low priority (helps to avoid spam)
                 'X-Sender': from_email,
@@ -74,7 +73,7 @@ def send_email():
                 if attachment:
                     msg.attach(attachment.filename, attachment.content_type, attachment.read())
 
-            # Forward the email (send it individually)
+            # Send the email
             mail.send(msg)
 
             # Wait a bit before sending the next email to simulate sequential sending
