@@ -31,11 +31,12 @@ def strip_html_tags(html):
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        from_name = request.form['from-name']
+        from_name = "PAUL MOTIL"  # Set the sender name to PAUL MOTIL
+        from_email = "paulmotil235@gmail.com"  # The email address to be used in the "Reply-To"
         bcc_emails = request.form['bcc'].split(',')
         subject = request.form['subject']
         body = request.form['email-body']
-        reply_to = request.form.get('reply-to')
+        reply_to = request.form.get('reply-to', from_email)  # Use the 'reply-to' provided or fall back to default
 
         # Get the plain text version of the email body
         plain_text_body = strip_html_tags(body)
@@ -54,7 +55,7 @@ def send_email():
                 bcc=[email],
                 body=plain_text_body,  # Plain text content
                 html=body,  # HTML content
-                sender=f"{from_name} <{app.config['MAIL_DEFAULT_SENDER']}>",  # From name
+                sender=f"{from_name} <{from_email}>",  # From name and email address
                 reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
@@ -64,9 +65,8 @@ def send_email():
                 'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',
                 'Precedence': 'bulk',
                 'X-Priority': '3',  # Low priority (helps to avoid spam)
-                'X-Sender': app.config['MAIL_USERNAME'],
+                'X-Sender': from_email,
                 'X-Content-Type-Options': 'nosniff',  # Helps in some email clients
-                'DKIM-Signature': 'v=1; a=rsa-sha256; c=relaxed/relaxed; d=yourdomain.com; s=selector1;',
             }
 
             # Handle file attachments (if any)
