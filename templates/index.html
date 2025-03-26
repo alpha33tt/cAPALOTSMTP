@@ -16,25 +16,25 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f4f4f9;
+            background-color: #e3f2fd; /* Light blue background */
         }
         .container {
             width: 80%;
             max-width: 800px;
             padding: 40px;
-            background-color: #fff;
+            background-color: #ffffff; /* White background for the form */
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
             margin: 20px;
         }
         h1 {
-            color: #333;
+            color: #1976D2; /* Blue title */
             font-size: 36px;
             margin-bottom: 20px;
         }
         .btn {
-            background-color: #4CAF50;
+            background-color: #42a5f5; /* Warm blue button */
             color: white;
             padding: 12px 25px;
             border: none;
@@ -44,7 +44,7 @@
             font-size: 18px;
         }
         .btn:hover {
-            background-color: #45a049;
+            background-color: #1e88e5; /* Darker blue on hover */
         }
         #status {
             margin-top: 20px;
@@ -69,10 +69,10 @@
             margin-top: 10px;
         }
         .sent {
-            color: green;
+            color: #388e3c; /* Green color for sent emails */
         }
         .sending {
-            color: blue;
+            color: #0288d1; /* Blue color for sending emails */
         }
         .email-received {
             font-weight: bold;
@@ -86,6 +86,7 @@
             text-align: left;
             display: block;
             margin-top: 15px;
+            color: #1976D2; /* Blue label */
         }
 
         input[type="text"], textarea {
@@ -99,7 +100,7 @@
         }
 
         input[type="text"]:focus, textarea:focus {
-            border-color: #4CAF50;
+            border-color: #42a5f5; /* Focused border color in blue */
         }
 
         /* Quill Editor */
@@ -112,6 +113,25 @@
 
         .ql-editor {
             font-size: 16px;
+        }
+
+        /* Custom scrollbar for Quill editor */
+        .ql-container {
+            scrollbar-width: thin;
+            scrollbar-color: #42a5f5 #e3f2fd;
+        }
+
+        .ql-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .ql-container::-webkit-scrollbar-thumb {
+            background-color: #42a5f5;
+            border-radius: 8px;
+        }
+
+        .ql-container::-webkit-scrollbar-track {
+            background-color: #e3f2fd;
         }
     </style>
 </head>
