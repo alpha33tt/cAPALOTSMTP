@@ -1,6 +1,7 @@
+import os
 from flask import Flask, render_template, request, jsonify
 from flask_mail import Mail, Message
-import os
+import re
 import time
 
 app = Flask(__name__)
@@ -10,62 +11,80 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'hewlettpackardenterprise01@gmail.com'  # Your email
-app.config['MAIL_PASSWORD'] = 'aoarlmobvjtablgm'  # Your app password
-app.config['MAIL_DEFAULT_SENDER'] = 'hewlettpackardenterprise01@gmail.com'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hewlettpackardenterprise01@gmail.com')  # Gmail username
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'aoarlmobvjtablgm')  # Gmail app password
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'hewlettpackardenterprise01@gmail.com')
 
+# Initialize Flask-Mail
 mail = Mail(app)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+def strip_html_tags(html):
+    """Remove HTML tags and return plain text."""
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html)
+
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
-        # Check if the required fields are available
-        from_name = request.form.get('from-name')
-        bcc_emails = request.form.get('bcc', '').split(',')
-        subject = request.form.get('subject')
-        body = request.form.get('email-body')
-        reply_to = request.form.get('reply-to', '')
+        from_name = request.form['from-name']
+        bcc_emails = request.form['bcc'].split(',')
+        subject = request.form['subject']
+        body = request.form['email-body']
+        reply_to = request.form.get('reply-to')
 
-        # Validate that required fields are present
-        if not from_name or not bcc_emails or not subject or not body:
-            return jsonify({"status": "error", "message": "Missing required fields."}), 400
+        # Get the plain text version of the email body
+        plain_text_body = strip_html_tags(body)
 
+        if not plain_text_body.strip():
+            return 'Email body cannot be empty.', 400
+
+        # Prepare the response
         responses = []
-        updates = []
+        email_counter = 1
 
-        # Loop through BCC emails to send one by one
+        # Loop through the BCC emails and send them one by one
         for email in bcc_emails:
-            if not email.strip():  # Skip empty emails
-                continue
-
-            # Send email
             msg = Message(
                 subject=subject,
-                recipients=[],  # No recipients since we are using BCC
+                recipients=[],  # No recipients, since we're using BCC
                 bcc=[email],
-                body=body,
-                sender=f"{from_name} <{app.config['MAIL_DEFAULT_SENDER']}>",
-                reply_to=reply_to,
+                body=plain_text_body,  # Plain text content
+                html=body,  # HTML content
+                sender=f"{from_name} <{app.config['MAIL_DEFAULT_SENDER']}>",  # From name
+                reply_to=reply_to,  # Set the 'Reply-to' email
             )
 
-            # Update status: email is being sent
-            updates.append({"email": email, "status": "sending"})
-            time.sleep(2.5)  # Wait for 2.5 seconds to simulate delay between sends
+            # Set headers properly using the Message object attributes
+            msg.extra_headers = {
+                'X-Mailer': 'Flask-Mail',
+                'List-Unsubscribe': '<mailto:unsubscribe@yourdomain.com>',  # Include unsubscribe link
+                'Precedence': 'bulk',  # Mark email as bulk
+                'List-Id': 'example-list@yourdomain.com',  # Use a unique list ID
+            }
+
+            # Handle file attachments (if any)
+            if 'attachment' in request.files:
+                attachment = request.files['attachment']
+                if attachment:
+                    msg.attach(attachment.filename, attachment.content_type, attachment.read())
 
             # Send the email
             mail.send(msg)
 
-            # Update status: email sent successfully
-            updates.append({"email": email, "status": "sent"})
-            responses.append(f"Email to {email} sent successfully!")
+            # Wait for 2.5 seconds before sending the next email
+            time.sleep(2.5)
 
-        return jsonify({"status": "success", "updates": updates})
+            responses.append(f"Email to {email} sent successfully!")
+            email_counter += 1
+
+        return jsonify({"status": "success", "responses": responses})
 
     except Exception as e:
+        app.logger.error(f"Error while sending email: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
