@@ -133,12 +133,14 @@ $(document).ready(function() {
                     $('#emailList').append(emailItem);
                     emailItem.fadeIn(500); // Fade in effect
 
+                    var delayTime = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000; // Random time between 5s to 10s
+
                     setTimeout(function() {
                         emailItem.text('Email to ' + email.split(' ')[2] + ' sent successfully!')
                             .removeClass('sending')
                             .addClass('sent') // Mark as sent
                             .fadeOut(500, function() {
-                                // Display the next email in the list after 2.5 seconds
+                                // Display the next email in the list after random delay
                                 if (index + 1 < emailList.length) {
                                     emailCounter++;
                                     var nextItem = $('<div class="email-item sending"></div>');
@@ -151,12 +153,12 @@ $(document).ready(function() {
                                 $('#emailList').append(receivedEmailItem);
                                 receivedEmailItem.fadeIn(500);
 
-                                // Clear it after 2.5 seconds
+                                // Clear it after random time (between 5s-10s)
                                 setTimeout(function() {
                                     receivedEmailItem.fadeOut(500);
-                                }, 2500); // 2.5s delay
+                                }, delayTime); // Delay before clearing the "Received" message
                             });
-                    }, 2500); // 2.5s delay before the next email appears
+                    }, delayTime); // Random delay for each email
                 });
             },
             error: function(error) {
